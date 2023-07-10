@@ -1,0 +1,68 @@
+#Loading in and exploring the dataset
+HPrice_Train <- read.csv("~/Slippi/train.csv")
+head(HPrice_Train)
+is.data.frame(HPrice_Train)
+str(HPrice_Train)
+dim(HPrice_Train)
+head(HPrice_Train)
+names(HPrice_Train)
+
+#Filtering the dataset to only include relevant variables
+HPrice_Train1 <- HPrice_Train[c("Id", "MSSubClass", "MSZoning", "LotFrontage", "LotArea", "LotConfig", "OverallQual", "YearBuilt", "TotalBsmtSF", "CentralAir", "GrLivArea", "FullBath", "HalfBath", "BedroomAbvGr", "GarageArea", "SalePrice")]
+#Exploring our new dataset
+str(HPrice_Train1)
+summary(HPrice_Train1)
+head(HPrice_Train1)
+
+
+install.packages('caret')
+library(caret)
+
+#Building dummy variiables for the factor variables
+dummy_model <- dummyVars(~., data = HPrice_Train1)
+HPrice_Train2 <- predict(dummy_model, newdata = HPrice_Train1)
+print(head(HPrice_Train2))
+#Training our linear regression model to predict SalePrice
+lmT <- lm(SalePrice ~., data=HPrice_Train2)
+summary(lmT)
+
+#Removing variables that are insignificant
+lmTrain <- lm(SalePrice ~. -Id -CentralAirN -LotConfigCorner -MSZoningC..all. -MSZoningFV -MSZoningRH -MSZoningRL -MSZoningRM -LotFrontage -LotConfigFR2 -LotConfigFR3 -LotConfigInside -CentralAirY -FullBath -HalfBath, data = data.frame(HPrice_Train2))
+summary(lmTrain)
+
+#Plotting to check for normality and violation of any assumptions
+par(mfrow=c(2,2))
+plot(step1)
+
+#Finding the errors between our predicted values and actual values
+HPrice_Train2 <- data.frame(HPrice_Train2)
+HPrice_Train2$Predicted <- predict(lmTrain, HPrice_Train2, type='response')
+print(head(HPrice_Train2))
+HPrice_Train2$Error <- HPrice_Train2$SalePrice - HPrice_Train2$Predicted
+head(HPrice_Train2)
+
+rmse <- sqrt(mean(HPrice_Train2$Error^2))
+print(rmse)
+
+mae <- mean(abs(HPrice_Train2$Error))
+print(mae)
+
+mpe <- mean((HPrice_Train2$Error / HPrice_Train2$SalePrice) * 100)
+print(mpe)
+
+mape <- mean(abs(HPrice_Train2$Error / HPrice_Train2$SalePrice) * 100)
+print(mape)
+
+install.packages('forecast')
+library(forecast)
+accuracy(HPrice_Train2$Predicted, HPrice_Train2$SalePrice)
+
+#Applying the model to our tesitng data
+HPrice_Test <- read.csv("~/Slippi/test.csv")
+HPrice_Test1 <- HPrice_Test[c("Id", "MSSubClass", "MSZoning", "LotFrontage", "LotArea", "LotConfig", "OverallQual", "YearBuilt", "TotalBsmtSF", "CentralAir", "GrLivArea", "FullBath", "HalfBath", "BedroomAbvGr", "GarageArea")]
+dummy_modeltest <- dummyVars(~., data = HPrice_Test1)
+HPrice_Test1$Predicted <- predict(lmTrain, HPrice_Test1, type='response')
+
+names(HPrice_Test1)
+summary(lmTrain)
+
